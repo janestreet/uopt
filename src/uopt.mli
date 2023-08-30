@@ -28,7 +28,6 @@
     [Uniform_array.t], although array creation will still do such checks, and you may want
     to use the [set_with_caml_modify] kind of function to skip the immediacy checks. *)
 
-
 open! Base
 
 type +'a t [@@deriving sexp, globalize]
