@@ -40,6 +40,8 @@ val some_local : ('a[@local]) -> ('a t[@local])
 val is_none : (_ t[@local]) -> bool
 val is_some : (_ t[@local]) -> bool
 val value_exn : 'a t -> 'a
+val value : 'a t -> default:'a -> 'a
+val value_local : 'a t -> default:'a -> 'a
 
 (** It is safe to call [unsafe_value t] iff [is_some t]. *)
 val unsafe_value : 'a t -> 'a

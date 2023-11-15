@@ -22,6 +22,8 @@ let is_none t = phys_equal t none
 let is_some t = not (is_none t)
 let invariant invariant_a t = if is_some t then invariant_a (unsafe_value t)
 let value_exn t = if is_none t then failwith "Uopt.value_exn" else unsafe_value t
+let value t ~default = Bool.select (is_none t) default (unsafe_value t)
+let value_local t ~default = Bool.select (is_none t) default (unsafe_value_local t)
 let to_option t = if is_none t then None else Some (unsafe_value t)
 
 let of_option = function
