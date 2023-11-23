@@ -36,12 +36,12 @@ include Invariant.S1 with type 'a t := 'a t
 
 val none : _ t
 val some : 'a -> 'a t
-val some_local : ('a[@local]) -> ('a t[@local])
-val is_none : (_ t[@local]) -> bool
-val is_some : (_ t[@local]) -> bool
+val some_local : 'a -> 'a t
+val is_none : _ t -> bool
+val is_some : _ t -> bool
 val value_exn : 'a t -> 'a
 val value : 'a t -> default:'a -> 'a
-val value_local : 'a t -> default:'a -> 'a
+val some_if : bool -> 'a -> 'a t
 
 (** It is safe to call [unsafe_value t] iff [is_some t]. *)
 val unsafe_value : 'a t -> 'a
@@ -56,11 +56,19 @@ module Optional_syntax : sig
   end
 end
 
+(** Same as their global equivalents. *)
 module Local : sig
+  val some : 'a -> 'a t
+  val value : 'a t -> default:'a -> 'a
+  val some_if : bool -> 'a -> 'a t
+  val unsafe_value : 'a t -> 'a
+  val to_option : 'a t -> 'a option
+  val of_option : 'a option -> 'a t
+
   module Optional_syntax : sig
     module Optional_syntax : sig
-      val is_none : (_ t[@local]) -> bool
-      val unsafe_value : ('a t[@local]) -> ('a[@local])
+      val is_none : _ t -> bool
+      val unsafe_value : 'a t -> 'a
     end
   end
 end
