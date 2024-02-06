@@ -1,3 +1,5 @@
-(library (name uopt_test)
+(library
+ (name uopt_test)
  (libraries expect_test_helpers_core.expect_test_helpers_base core uopt)
- (preprocess (pps ppx_jane)))
+ (preprocess
+  (pps ppx_jane)))

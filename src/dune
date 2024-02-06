@@ -1,2 +1,6 @@
-(library (name uopt) (public_name uopt) (libraries base)
- (preprocess (pps ppx_jane)))
+(library
+ (name uopt)
+ (public_name uopt)
+ (libraries base)
+ (preprocess
+  (pps ppx_jane)))
