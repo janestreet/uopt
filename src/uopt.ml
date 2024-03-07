@@ -17,7 +17,7 @@ let[@inline] some (x : 'a) =
 
 let[@inline] some_local (type a) (x : a) : a t =
   let r : a t = Obj_local.magic x in
-  if phys_equal r none then failwith "Uopt.some_local Uopt.none";
+  if phys_equal r none then failwith "Uopt.Local.some Uopt.none";
   r
 ;;
 
