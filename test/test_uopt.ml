@@ -65,12 +65,13 @@ let%expect_test "ensure no miscompilation due to unboxing of the float" =
   print_endline (f 100 false);
   [%expect {|
     100.
-    none |}]
+    none
+    |}]
 ;;
 
 let%expect_test "Some None" =
   require_does_raise [%here] (fun () -> Uopt.some Uopt.none);
-  [%expect {|(Failure "Uopt.some Uopt.none")|}]
+  [%expect {| (Failure "Uopt.some Uopt.none") |}]
 ;;
 
 let%test_unit "sexp roundtrip and compatibility with regular options" =
