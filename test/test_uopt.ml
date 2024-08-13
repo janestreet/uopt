@@ -24,7 +24,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  require_does_raise [%here] (fun () -> value_exn none);
+  require_does_raise (fun () -> value_exn none);
   [%expect {| (Failure Uopt.value_exn) |}]
 ;;
 
@@ -40,7 +40,6 @@ let%expect_test _ =
 
 let%expect_test "[match%optional none]" =
   require
-    [%here]
     (match%optional none with
      | None -> true
      | Some _ -> false)
@@ -48,7 +47,6 @@ let%expect_test "[match%optional none]" =
 
 let%expect_test "[match%optional some]" =
   require
-    [%here]
     (match%optional some 13 with
      | None -> false
      | Some x -> x = 13)
@@ -63,14 +61,15 @@ let%expect_test "ensure no miscompilation due to unboxing of the float" =
   in
   print_endline (f 100 true);
   print_endline (f 100 false);
-  [%expect {|
+  [%expect
+    {|
     100.
     none
     |}]
 ;;
 
 let%expect_test "Some None" =
-  require_does_raise [%here] (fun () -> Uopt.some Uopt.none);
+  require_does_raise (fun () -> Uopt.some Uopt.none);
   [%expect {| (Failure "Uopt.some Uopt.none") |}]
 ;;
 

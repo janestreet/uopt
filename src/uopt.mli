@@ -35,39 +35,40 @@ type +'a t [@@deriving sexp, globalize]
 include Invariant.S1 with type 'a t := 'a t
 
 val none : _ t
-val some : 'a -> 'a t
-val is_none : _ t -> bool
-val is_some : _ t -> bool
-val value_exn : 'a t -> 'a
-val value : 'a t -> default:'a -> 'a
-val some_if : bool -> 'a -> 'a t
+val some : 'a -> 'a t [@@zero_alloc]
+val is_none : _ t -> bool [@@zero_alloc]
+val is_some : _ t -> bool [@@zero_alloc]
+val value_exn : 'a t -> 'a [@@zero_alloc]
+val value : 'a t -> default:'a -> 'a [@@zero_alloc]
+val some_if : bool -> 'a -> 'a t [@@zero_alloc]
 
 (** It is safe to call [unsafe_value t] iff [is_some t]. *)
 val unsafe_value : 'a t -> 'a
+[@@zero_alloc]
 
 val to_option : 'a t -> 'a option
-val of_option : 'a option -> 'a t
+val of_option : 'a option -> 'a t [@@zero_alloc]
 
 module Optional_syntax : sig
   module Optional_syntax : sig
-    val is_none : _ t -> bool
-    val unsafe_value : 'a t -> 'a
+    val is_none : _ t -> bool [@@zero_alloc]
+    val unsafe_value : 'a t -> 'a [@@zero_alloc]
   end
 end
 
 (** Same as their global equivalents. *)
 module Local : sig
-  val some : 'a -> 'a t
-  val value : 'a t -> default:'a -> 'a
-  val some_if : bool -> 'a -> 'a t
-  val unsafe_value : 'a t -> 'a
+  val some : 'a -> 'a t [@@zero_alloc]
+  val value : 'a t -> default:'a -> 'a [@@zero_alloc]
+  val some_if : bool -> 'a -> 'a t [@@zero_alloc]
+  val unsafe_value : 'a t -> 'a [@@zero_alloc]
   val to_option : 'a t -> 'a option
-  val of_option : 'a option -> 'a t
+  val of_option : 'a option -> 'a t [@@zero_alloc]
 
   module Optional_syntax : sig
     module Optional_syntax : sig
-      val is_none : _ t -> bool
-      val unsafe_value : 'a t -> 'a
+      val is_none : _ t -> bool [@@zero_alloc]
+      val unsafe_value : 'a t -> 'a [@@zero_alloc]
     end
   end
 end
