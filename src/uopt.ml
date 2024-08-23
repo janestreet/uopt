@@ -21,14 +21,14 @@ let[@inline] [@zero_alloc] some (x : 'a) =
   r
 ;;
 
-let[@inline] some_local (type a) (x : a) : a t =
+let[@inline] some_local (type a) (local_ (x : a)) : a t = exclave_
   let r : a t = Obj_local.magic x in
   if phys_equal r none then failwith "Uopt.Local.some Uopt.none";
   r
 ;;
 
 let[@inline] [@zero_alloc] unsafe_value (t : 'a t) : 'a = Obj.magic t
-let unsafe_value_local : 'a t -> 'a = Obj_local.magic
+let unsafe_value_local : local_ 'a t -> local_ 'a = Obj_local.magic
 let[@inline] [@zero_alloc] is_none t = phys_equal t none
 let[@inline] [@zero_alloc] is_some t = not (is_none t)
 let[@inline] invariant invariant_a t = if is_some t then invariant_a (unsafe_value t)
@@ -41,23 +41,23 @@ let[@inline] [@zero_alloc] value t ~default =
   Bool.select (is_none t) default (unsafe_value t)
 ;;
 
-let[@inline] value_local t ~default =
+let[@inline] value_local t ~default = exclave_
   Bool.select (is_none t) default (unsafe_value_local t)
 ;;
 
 let[@inline] [@zero_alloc] some_if cond x = Bool.select cond (some x) none
-let[@inline] some_if_local cond x = Bool.select cond (some_local x) none
+let[@inline] some_if_local cond x = exclave_ Bool.select cond (some_local x) none
 
 (* [to_option] prioritizes not allocating in the [None] case. Allocation is far cheaper
    for [to_option_local], so it instead prioritizes minimizing unpredictable branches. *)
 
 let[@inline] to_option t = if is_none t then None else Some (unsafe_value t)
 
-let[@inline] to_option_local t =
+let[@inline] to_option_local t = exclave_
   Bool.select (is_none t) None (Some (unsafe_value_local t))
 ;;
 
-let[@inline] of_option_local opt =
+let[@inline] of_option_local opt = exclave_
   match opt with
   | None -> none
   | Some x -> some_local x
@@ -88,17 +88,17 @@ module Optional_syntax = struct
 end
 
 module Local = struct
-  let[@zero_alloc] some t = some_local t
-  let[@zero_alloc] unsafe_value t = unsafe_value_local t
-  let[@zero_alloc] value t ~default = value_local t ~default
-  let[@zero_alloc] some_if cond x = some_if_local cond x
+  let[@zero_alloc] some t = exclave_ some_local t
+  let[@zero_alloc] unsafe_value t = exclave_ unsafe_value_local t
+  let[@zero_alloc] value t ~default = exclave_ value_local t ~default
+  let[@zero_alloc] some_if cond x = exclave_ some_if_local cond x
   let to_option = to_option_local
-  let[@zero_alloc] of_option t = of_option_local t
+  let[@zero_alloc] of_option t = exclave_ of_option_local t
 
   module Optional_syntax = struct
     module Optional_syntax = struct
       let[@zero_alloc] is_none t = is_none t
-      let[@zero_alloc] unsafe_value t = unsafe_value_local t
+      let[@zero_alloc] unsafe_value t = exclave_ unsafe_value_local t
     end
   end
 end
