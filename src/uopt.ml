@@ -10,10 +10,14 @@ type +'a t
    and [nano_mutex].
 *)
 
-(* This [Obj.magic] is OK because we never allow user code access to [none] (except via
-   [unsafe_value]).  We disallow [_ Uopt.t Uopt.t], so there is no chance of confusing
-   [none] with [some none].  And [float Uopt.t array] is similarly disallowed. *)
-let none : _ t = Obj.magic "Uopt.none"
+(* Having [%loc_LOC] (statically allocated string) as [none : 'a t] is OK because we never
+   allow user code access to [none] as ['a] except via [unsafe_value].  We disallow [_
+   Uopt.t Uopt.t], so there is no chance of confusing [none] with [some none].  And [float
+   Uopt.t array] is similarly disallowed. *)
+
+external __LOC__ : _ t = "%loc_LOC"
+
+let none : _ t = __LOC__
 
 let[@inline] [@zero_alloc] some (x : 'a) =
   let r : 'a t = Obj.magic x in
@@ -109,12 +113,10 @@ let globalize globalize_a t =
   | Some x -> some (globalize_a x)
 ;;
 
-let%test_module _ =
-  (module struct
-    let%test_unit ("using the same sentinel value" [@tags "no-js"]) =
-      match some "Uopt.none" with
-      | (_ : string t) -> failwith "should not have gotten to this point"
-      | exception _ -> ()
-    ;;
-  end)
-;;
+module%test _ = struct
+  let%test_unit ("using the same sentinel value" [@tags "no-js"]) =
+    match some "File \"uopt.ml\", line 20, characters 17-24" with
+    | (_ : string t) -> failwith "should not have gotten to this point"
+    | exception _ -> ()
+  ;;
+end
