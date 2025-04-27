@@ -2,7 +2,7 @@ open Base
 module Obj = Stdlib.Obj
 module Obj_local = Base.Exported_for_specific_uses.Obj_local
 
-type +'a t
+type +'a t : immutable_data with 'a
 
 (* Note: Clients rely on the fact that various functions in this file will not have an
    OCaml safepoint inserted in their prelude. In particular, [is_some], [some], [none] and
@@ -15,25 +15,38 @@ type +'a t
    Uopt.t Uopt.t], so there is no chance of confusing [none] with [some none].  And [float
    Uopt.t array] is similarly disallowed. *)
 
-external __LOC__ : _ t = "%loc_LOC"
+external __LOC__ : _ t @@ portable = "%loc_LOC"
 
-let none : _ t = __LOC__
+let none = __LOC__
 
-let[@inline] [@zero_alloc] some (x : 'a) =
-  let r : 'a t = Obj.magic x in
-  if phys_equal r none then failwith "Uopt.some Uopt.none";
-  r
+let[@inline] get_none : unit -> 'a t @@ portable =
+  fun () -> none |> Portability_hacks.magic_uncontended__promise_deeply_immutable
 ;;
 
-let[@inline] some_local (type a) (local_ (x : a)) : a t = exclave_
-  let r : a t = Obj_local.magic x in
-  if phys_equal r none then failwith "Uopt.Local.some Uopt.none";
+external%template magic_some
+  :  ('a[@local_opt]) @ c p
+  -> ('a t[@local_opt]) @ c p
+  @@ portable
+  = "%obj_magic"
+[@@mode p = (portable, nonportable), c = (contended, uncontended)]
+
+let%template[@zero_alloc] some (x @ c p) =
+  let r @ c p = (magic_some [@mode p c]) x in
+  if phys_equal r (get_none ()) then failwith "Uopt.some Uopt.none";
   r
+[@@mode p = (portable, nonportable), c = (contended, uncontended)]
+;;
+
+let%template[@inline] some_local (x @ c local p) = exclave_
+  let r @ c p = (magic_some [@mode p c]) x in
+  if phys_equal r (get_none ()) then failwith "Uopt.Local.some Uopt.none";
+  r
+[@@mode p = (portable, nonportable), c = (contended, uncontended)]
 ;;
 
 let[@inline] [@zero_alloc] unsafe_value (t : 'a t) : 'a = Obj.magic t
 let unsafe_value_local : local_ 'a t -> local_ 'a = Obj_local.magic
-let[@inline] [@zero_alloc] is_none t = phys_equal t none
+let[@inline] [@zero_alloc] is_none t = phys_equal t (get_none ())
 let[@inline] [@zero_alloc] is_some t = not (is_none t)
 let[@inline] invariant invariant_a t = if is_some t then invariant_a (unsafe_value t)
 
@@ -49,8 +62,8 @@ let[@inline] value_local t ~default = exclave_
   Bool.select (is_none t) default (unsafe_value_local t)
 ;;
 
-let[@inline] [@zero_alloc] some_if cond x = Bool.select cond (some x) none
-let[@inline] some_if_local cond x = exclave_ Bool.select cond (some_local x) none
+let[@inline] [@zero_alloc] some_if cond x = Bool.select cond (some x) (get_none ())
+let[@inline] some_if_local cond x = exclave_ Bool.select cond (some_local x) (get_none ())
 
 (* [to_option] prioritizes not allocating in the [None] case. Allocation is far cheaper
    for [to_option_local], so it instead prioritizes minimizing unpredictable branches. *)
@@ -63,26 +76,26 @@ let[@inline] to_option_local t = exclave_
 
 let[@inline] of_option_local opt = exclave_
   match opt with
-  | None -> none
+  | None -> get_none ()
   | Some x -> some_local x
 ;;
 
 let[@inline] [@zero_alloc] of_option opt =
   match opt with
-  | None -> none
+  | None -> get_none ()
   | Some a -> some a
 ;;
 
 (* Note [sexp_of_t] and [t_of_sexp] must remain stable; see [Uopt_core.Stable]. *)
-include
-  Sexpable.Of_sexpable1
-    (Option)
-    (struct
-      type nonrec 'a t = 'a t
+  include%template
+    Sexpable.Of_sexpable1 [@modality portable]
+      (Option)
+      (struct
+        type nonrec 'a t = 'a t
 
-      let to_sexpable = to_option
-      let of_sexpable = of_option
-    end)
+        let to_sexpable = to_option
+        let of_sexpable = of_option
+      end)
 
 module Optional_syntax = struct
   module Optional_syntax = struct
@@ -92,11 +105,14 @@ module Optional_syntax = struct
 end
 
 module Local = struct
-  let[@zero_alloc] some t = exclave_ some_local t
+  let%template[@zero_alloc] some t = exclave_ (some_local [@mode p c]) t
+  [@@mode p = (nonportable, portable), c = (contended, uncontended)]
+  ;;
+
   let[@zero_alloc] unsafe_value t = exclave_ unsafe_value_local t
   let[@zero_alloc] value t ~default = exclave_ value_local t ~default
   let[@zero_alloc] some_if cond x = exclave_ some_if_local cond x
-  let to_option = to_option_local
+  let[@zero_alloc] to_option t = exclave_ to_option_local t
   let[@zero_alloc] of_option t = exclave_ of_option_local t
 
   module Optional_syntax = struct
@@ -109,13 +125,13 @@ end
 
 let globalize globalize_a t =
   match%optional.Local t with
-  | None -> none
+  | None -> get_none ()
   | Some x -> some (globalize_a x)
 ;;
 
 module%test _ = struct
   let%test_unit ("using the same sentinel value" [@tags "no-js"]) =
-    match some "File \"uopt.ml\", line 20, characters 17-24" with
+    match some "File \"uopt.ml\", line 20, characters 11-18" with
     | (_ : string t) -> failwith "should not have gotten to this point"
     | exception _ -> ()
   ;;

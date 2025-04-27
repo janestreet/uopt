@@ -1,13 +1,15 @@
+@@ portable
+
 (** [Uopt.t] is an unboxed option: an [option]-like type that incurs no allocation,
     without requiring a reserved value in the underlying type.
 
     The downsides compared to [option] are that:
-    - [Uopt.t] cannot be nested, i.e. used as ['a Uopt.t Uopt.t], because trying to
-      create [Uopt.some Uopt.none] is not supported and would raise.
+    - [Uopt.t] cannot be nested, i.e. used as ['a Uopt.t Uopt.t], because trying to create
+      [Uopt.some Uopt.none] is not supported and would raise.
     - it is unsafe to have values of type [float Uopt.t array], or any type which has the
       same memory representation, since the representation of the array would vary
-      depending on whether [none] or [some] is used to create the array.
-      Using [float Uopt.t Uniform_array.t] is fine.
+      depending on whether [none] or [some] is used to create the array. Using
+      [float Uopt.t Uniform_array.t] is fine.
     - the implementation has unsafe code which has resulted in miscompilation in the past.
 
     As a result, we advise against using this in systems that are not high performance.
@@ -30,12 +32,16 @@
 
 open! Base
 
-type +'a t [@@deriving sexp, globalize]
+type +'a t : immutable_data with 'a [@@deriving sexp, globalize]
 
 include Invariant.S1 with type 'a t := 'a t
 
+val get_none : unit -> _ t
 val none : _ t
-val some : 'a -> 'a t [@@zero_alloc]
+
+val%template some : 'a @ c p -> 'a t @ c p
+[@@zero_alloc] [@@mode p = (portable, nonportable), c = (contended, uncontended)]
+
 val is_none : local_ _ t -> bool [@@zero_alloc]
 val is_some : local_ _ t -> bool [@@zero_alloc]
 val value_exn : 'a t -> 'a [@@zero_alloc]
@@ -51,18 +57,20 @@ val of_option : 'a option -> 'a t [@@zero_alloc]
 
 module Optional_syntax : sig
   module Optional_syntax : sig
-    val is_none : _ t -> bool [@@zero_alloc]
+    val is_none : local_ _ t -> bool [@@zero_alloc]
     val unsafe_value : 'a t -> 'a [@@zero_alloc]
   end
 end
 
 (** Same as their global equivalents. *)
 module Local : sig
-  val some : local_ 'a -> local_ 'a t [@@zero_alloc]
+  val%template some : local_ 'a @ c p -> local_ 'a t @ c p
+  [@@zero_alloc] [@@mode p = (portable, nonportable), c = (contended, uncontended)]
+
   val value : local_ 'a t -> default:local_ 'a -> local_ 'a [@@zero_alloc]
   val some_if : bool -> local_ 'a -> local_ 'a t [@@zero_alloc]
   val unsafe_value : local_ 'a t -> local_ 'a [@@zero_alloc]
-  val to_option : local_ 'a t -> local_ 'a option
+  val to_option : local_ 'a t -> local_ 'a option [@@zero_alloc]
   val of_option : local_ 'a option -> local_ 'a t [@@zero_alloc]
 
   module Optional_syntax : sig
