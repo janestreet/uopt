@@ -1,6 +1,4 @@
 open Base
-module Obj = Stdlib.Obj
-module Obj_local = Base.Exported_for_specific_uses.Obj_local
 
 type +'a t
 
@@ -41,7 +39,7 @@ let%template[@inline] some_local x =
 ;;
 
 let[@inline] [@zero_alloc] unsafe_value (t : 'a t) : 'a = Obj.magic t
-let unsafe_value_local : 'a t -> 'a = Obj_local.magic
+let unsafe_value_local : 'a t -> 'a = Obj.magic
 let[@inline] [@zero_alloc] is_none t = phys_equal t (get_none ())
 let[@inline] [@zero_alloc] is_some t = not (is_none t)
 let[@inline] invariant invariant_a t = if is_some t then invariant_a (unsafe_value t)
@@ -127,7 +125,7 @@ let globalize globalize_a t =
 
 module%test _ = struct
   let%test_unit ("using the same sentinel value" [@tags "no-js"]) =
-    match some "File \"uopt.ml\", line 20, characters 11-18" with
+    match some "File \"uopt.ml\", line 18, characters 11-18" with
     | (_ : string t) -> failwith "should not have gotten to this point"
     | exception _ -> ()
   ;;
