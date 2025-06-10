@@ -17,7 +17,7 @@ external __LOC__ : _ t @@ portable = "%loc_LOC"
 
 let none = __LOC__
 
-let[@inline] get_none : unit -> 'a t @@ portable =
+let[@inline] get_none : (unit -> 'a t) @ portable =
   fun () -> none |> Portability_hacks.magic_uncontended__promise_deeply_immutable
 ;;
 
