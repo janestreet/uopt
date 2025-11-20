@@ -68,6 +68,7 @@ module Local : sig
   [@@zero_alloc] [@@mode p = (portable, nonportable), c = (contended, uncontended)]
 
   val value : local_ 'a t -> default:local_ 'a -> local_ 'a [@@zero_alloc]
+  val value_exn : local_ 'a t -> local_ 'a [@@zero_alloc]
   val some_if : bool -> local_ 'a -> local_ 'a t [@@zero_alloc]
   val unsafe_value : local_ 'a t -> local_ 'a [@@zero_alloc]
   val to_option : local_ 'a t -> local_ 'a option [@@zero_alloc]
