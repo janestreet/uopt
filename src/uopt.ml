@@ -9,9 +9,9 @@ type +'a t
 *)
 
 (* Having [%loc_LOC] (statically allocated string) as [none : 'a t] is OK because we never
-   allow user code access to [none] as ['a] except via [unsafe_value].  We disallow [_
-   Uopt.t Uopt.t], so there is no chance of confusing [none] with [some none].  And [float
-   Uopt.t array] is similarly disallowed. *)
+   allow user code access to [none] as ['a] except via [unsafe_value]. We disallow
+   [_ Uopt.t Uopt.t], so there is no chance of confusing [none] with [some none]. And
+   [float Uopt.t array] is similarly disallowed. *)
 
 external __LOC__ : _ t = "%loc_LOC"
 
@@ -105,6 +105,11 @@ module Local = struct
 
   let[@zero_alloc] unsafe_value t = unsafe_value_local t
   let[@zero_alloc] value t ~default = value_local t ~default
+
+  let[@inline] [@zero_alloc] value_exn t =
+    if is_none t then failwith "Uopt.Local.value_exn" else unsafe_value t
+  ;;
+
   let[@zero_alloc] some_if cond x = some_if_local cond x
   let[@zero_alloc] to_option t = to_option_local t
   let[@zero_alloc] of_option t = of_option_local t
