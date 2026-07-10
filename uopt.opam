@@ -17,6 +17,9 @@ depends: [
   "dune"     {>= "3.17.0"}
 ]
 available: arch != "x86_32"
+conflicts: [
+  "oxcaml-compiler" {< "5.2.0minus39"}
+]
 synopsis: "An [option]-like type that incurs no allocation, without requiring a reserved value in the underlying type"
 description: "
 Uopt_base provides an unboxed option type, for use in high-performance systems which avoid allocation. It has several downsides as compared to [option], and is not recommended for use in general-purpose software.
